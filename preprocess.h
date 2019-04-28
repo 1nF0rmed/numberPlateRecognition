@@ -4,21 +4,29 @@
 #include <iostream>
 using namespace cv;
 
+class Plate {
+public:
+    Mat plate;
+    Rect r_plate;
+    std::vector<std::vector<Point>> sub_contours;
+};
+
 class NumberPlateLocator {
 private:
     Mat base_img;
+    Mat binary_img;
 public:
     NumberPlateLocator(Mat img);
     Mat getBaseImage();
     Mat generateThresholdImage(Mat img);
     std::vector<std::vector<Point>> extractContours(Mat img);
-    bool verifySizes(RotatedRect mr);
-    void cleanAndFindPlate(Mat img, std::vector<std::vector<Point>> contours);
+    bool verifySizes(Rect r, Mat image);
+    Plate cleanAndFindPlate(std::vector<std::vector<Point>> contours);
 };
 
 NumberPlateLocator::NumberPlateLocator(Mat img) {
     // Set base_img as the original image to be processed
-    base_img = img;
+    base_img = img.clone();
 }
 
 Mat NumberPlateLocator::getBaseImage(){
@@ -44,10 +52,10 @@ Mat NumberPlateLocator::generateThresholdImage(Mat img) {
     Mat img_gray, img_sobel, img_thres;
 
     // Grayscale conversion
-
+    cvtColor(img, img_gray, COLOR_BGR2GRAY);
 
     // Blur the image to remove any noise
-
+    blur(img_gray, img_gray, Size(5, 5));
 
     /*
     // This is some experimentation I was doing. Kindly skip this section
@@ -62,6 +70,7 @@ Mat NumberPlateLocator::generateThresholdImage(Mat img) {
     /*Continue from here*/
 
     // Apply Adaptive Threshold
+    adaptiveThreshold(img_gray, img_thres, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 55, 5);
 
 
 
@@ -72,72 +81,108 @@ std::vector<std::vector<Point>> NumberPlateLocator::extractContours(Mat img) {
     /*
     // General Process for extracting contours
     //
-    // Define the structural elements with dimension 17x3
+    // Define the structural elements - shape MORPH_RECT - size 3x3
+    // https://docs.opencv.org/4.0.1/d4/d86/group__imgproc__filter.html#gac342a1bb6eabf6f55c803b09268e36dc
+    //
     // Perform morphological operations on the elements
+    // i) erode - img --> img_morph use the structuring element
+    // https://docs.opencv.org/4.0.1/d4/d86/group__imgproc__filter.html#gaeb1e0c1033e3f6b891a25d0511362aeb
+    //
+    // ii) dilate - img_morph --> img_morph use the structuring element
+    // https://docs.opencv.org/4.0.1/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c
+    //
     // Extract the contours using findContours
+    // https://docs.opencv.org/4.0.1/d3/dc0/group__imgproc__shape.html#gadf1ad6a0b82947fa1fe3c3d497f260e0
+    //
     // Return the extracted contours from the image
     //
     */
 
     std::vector<std::vector<Point>> contours;
+    std::vector<Vec4i> hierarchy;
     Mat img_morph;
 
     // define the max structural element
-    Mat element = getStructuringElement(MORPH_RECT, Size(17, 3));
-    // perform morphological operation on the image
-    morphologyEx(img, img_morph, MORPH_CLOSE, element);
+    Mat element = getStructuringElement(MORPH_RECT, Size(3, 3));
 
-    // Store the morphed image as the base image for visual representation
-    this->base_img = img_morph;
+    // perform morphological operation on the image
+    erode(img, img_morph, element);
+
+    // perform the dilate morphological operation on the image
+    dilate(img_morph, img_morph, element);
+
+    this->binary_img = img_morph.clone();
 
     // find the contours
-    findContours(img_morph, contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
+    findContours(img_morph, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
 
     return contours;
 }
 
-bool NumberPlateLocator::verifySizes(RotatedRect mr){
+bool NumberPlateLocator::verifySizes(Rect r, Mat image){
 
-    float error=0.4;
-    //Spain car plate size: 52x11 aspect 4,7272
-    float aspect=4.7272;
-    //Set a min and max area. All other patchs are discarded
-    int min= 15*aspect*15; // minimum area
-    int max= 125*aspect*125; // maximum area
-    //Get only patchs that match to a respect ratio.
-    float rmin= aspect-aspect*error;
-    float rmax= aspect+aspect*error;
+    // Original Expression
+    // (r.width > image.cols / 2 || r.height > image.cols / 2 || r.width < 120 || r.height < 20 || (double)r.width / r.height > 4.5 || (double)r.width / r.height < 3.5)
 
-    int area= mr.size.height * mr.size.width;
-    float r= (float)mr.size.width / (float)mr.size.height;
-    if(r<1)
-        r= (float)mr.size.height / (float)mr.size.width;
-
-    if(( area < min || area > max ) || ( r < rmin || r > rmax )){
-    }else{
-        return false;
-        return true;
-    }
+    return (r.width > image.cols / 2 || r.height > image.cols / 2 || r.width < 120 || r.height < 60);
 
 }
 
-void NumberPlateLocator::cleanAndFindPlate(Mat img, std::vector<std::vector<Point>> contours) {
-    std::vector<std::vector<Point>>::iterator itc = contours.begin();
-    std::vector<RotatedRect> rects;
-
+Plate NumberPlateLocator::cleanAndFindPlate(std::vector<std::vector<Point>> contours) {
+    /*
+    // General Process for plate localization
+    //
     // Loop through the contours
-    while(itc!=contours.end()) {
-        std::cout << "Contours" << std::endl;
-        RotatedRect mr = minAreaRect(Mat(*itc));
-        if(!verifySizes(mr)) {
-            itc = contours.erase(itc);
-        } else {
-            ++itc;
-            rects.push_back(mr);
-        }
+    //
+    // Get the bouding rectangle for the contour
+    // use boundingRect and store in a Rect object
+    //
+    // use checkSizes member function to verify that the Rect object
+    */
+
+    Mat tmp;
+    Rect r;
+    Plate pobj;
+    if(contours.size()<=0){
+        std::cout << "Error: No contours were found in the image.\n" ;
+        return pobj;
     }
 
-    std::cout << "Number of plate regions" << rects.size() << std::endl;
+    for(int i=0;i<contours.size();++i) {
+        // Create a bounding rectangle shape for the extracted contours
+        r = boundingRect(contours.at(i));
+
+        // Verify the dimensions of the rectangle
+        if(verifySizes(r, this->base_img))continue;
+
+
+        // Get the rectangle region from the morphed image
+        Mat sub_binary = this->binary_img(r);
+        Mat _plate = sub_binary.clone();
+
+        std::vector<std::vector<Point>> sub_contours;
+        std::vector<Vec4i> sub_hierarchy;
+
+        findContours(sub_binary, sub_contours, sub_hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0,0));
+
+        // Check if there are any contours
+        if(sub_contours.size()<8) continue;
+
+        tmp = this->base_img.clone();
+        rectangle(tmp, r, Scalar(0, 255, 0), 2, 8, 0);
+        imshow("Plate Final", tmp);
+        //waitKey(0);
+
+        pobj.sub_contours = sub_contours;
+        pobj.plate = _plate;
+        pobj.r_plate = r;
+
+        break;
+    }
+
+
+
+    return pobj;
 }
 
 

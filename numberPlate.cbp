@@ -32,13 +32,9 @@
 		<Linker>
 			<Add option="`opencv-config --ldstaticflags`" />
 		</Linker>
-		<Unit filename="arnold_schwarzenegger.jpg" />
 		<Unit filename="main.cpp" />
 		<Unit filename="preprocess.h" />
-		<Unit filename="test.JPG" />
 		<Unit filename="test1.jpg" />
-		<Unit filename="test2.jpg" />
-		<Unit filename="test4.jpg" />
 		<Extensions>
 			<code_completion />
 			<envvars />

@@ -1,13 +1,21 @@
 # depslib dependency file v1.0
-1555662394 source:/home/inf0rmed/uspProject/numberPlate/main.cpp
+1556462854 source:/home/inf0rmed/uspProject/numberPlate/main.cpp
 	<opencv2/core/core.hpp>
 	<opencv2/imgproc/imgproc.hpp>
 	<opencv2/highgui/highgui.hpp>
-	"preprocess.h"
+	"classifier.h"
 
-1555670838 /home/inf0rmed/uspProject/numberPlate/preprocess.h
+1556462646 /home/inf0rmed/uspProject/numberPlate/preprocess.h
 	<opencv2/core/core.hpp>
 	<opencv2/imgproc/imgproc.hpp>
 	<opencv2/highgui/highgui.hpp>
+	<iostream>
+
+1556462498 /home/inf0rmed/uspProject/numberPlate/classifier.h
+	<opencv2/core/core.hpp>
+	<opencv2/imgproc/imgproc.hpp>
+	<opencv2/highgui/highgui.hpp>
+	<opencv2/ml/ml.hpp>
+	"preprocess.h"
 	<iostream>
 
