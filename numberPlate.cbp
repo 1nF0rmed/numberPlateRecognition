@@ -32,6 +32,7 @@
 		<Linker>
 			<Add option="`opencv-config --ldstaticflags`" />
 		</Linker>
+		<Unit filename="classifier.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="preprocess.h" />
 		<Unit filename="test1.jpg" />

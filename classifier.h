@@ -2,6 +2,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/ml/ml.hpp>
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
 #include "preprocess.h"
 #include <iostream>
 
@@ -23,12 +25,17 @@ public:
     // TODO methods to classify the characters
     std::string recognizePlate(std::vector<std::vector<Mat>> characters);
     char svmClassifier(Mat img_character);
+    std::string tesClassifier();
 };
 
 PlateClassifier::PlateClassifier(Mat _plate, std::vector<std::vector<Point>> sub_contours, Rect r_plate) {
     this->_plate = _plate.clone();
     this->sub_contours = sub_contours;
     this->r_plate = r_plate;
+}
+
+std::string PlateClassifier::tesClassifier(){
+
 }
 
 std::vector<float> PlateClassifier::calculate_feature(Mat src)
@@ -104,7 +111,6 @@ int PlateClassifier::count_pixel(Mat img, bool black_pixel) {
 }
 
 std::vector<std::vector<Mat>> PlateClassifier::extractCharacters() {
-    std::cout << "Hello\n";
     std::vector<Rect> r_characters;
     std::vector<std::vector<Mat> > characters;
     std::vector<Mat> c;
@@ -124,7 +130,7 @@ std::vector<std::vector<Mat>> PlateClassifier::extractCharacters() {
 
     }
 
-    if (r_characters.size() >= 7)
+    if (r_characters.size() >= 4)
 		{
 			// sap xep
 			for (int i = 0; i < r_characters.size() - 1; ++i)

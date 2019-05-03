@@ -178,6 +178,7 @@ Plate NumberPlateLocator::cleanAndFindPlate(std::vector<std::vector<Point>> cont
         pobj.r_plate = r;
 
         break;
+
     }
 
 
